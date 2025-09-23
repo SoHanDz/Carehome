@@ -1,73 +1,55 @@
-# React + TypeScript + Vite
+Cấu trúc thư mục như sau:
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Carehome/
+├─ public/                 # Chứa assets tĩnh (logo, favicon, hình ảnh public)
+│
+├─ src/
+│  ├─ assets/              # Hình ảnh, icon, css, font
+│  ├─ components/          # Các component tái sử dụng (Button, Modal, Table…)
+│  ├─ layouts/             # Layout chung (MainLayout, AuthLayout…)
+│  ├─ pages/               # Các trang chính
+│  │   ├─ Dashboard/
+│  │   ├─ Residents/       # Quản lý cư dân (người ở viện)
+│  │   ├─ Staff/           # Quản lý nhân viên
+│  │   ├─ Medical/         # Quản lý y tế, thuốc
+│  │   ├─ Rooms/           # Quản lý phòng
+│  │   └─ Auth/            # Đăng nhập, đăng ký
+│  ├─ routes/              # Cấu hình router
+│  │   └─ index.tsx
+│  ├─ services/            # Gọi API (Axios, fetch)
+│  │   ├─ residentService.ts
+│  │   ├─ staffService.ts
+│  │   └─ authService.ts
+│  ├─ types/               # Khai báo TypeScript types/interfaces
+│  │   └─ resident.ts
+│  ├─ utils/               # Hàm tiện ích (formatDate, validate…)
+│  ├─ App.tsx              # App gốc
+│  ├─ main.tsx             # Entry point
+│  └─ theme.ts             # Cấu hình theme Ant Design
+│
+├─ .env                    # Biến môi trường (API URL, SECRET_KEY…)
+├─ tsconfig.json
+├─ package.json
+└─ vite.config.ts
 
-Currently, two official plugins are available:
+Ví dụ trong 1 folder của pages bất kì
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+src/pages/Auth/
+├─ components/           # Các component con (form nhỏ, UI riêng)
+│   ├─ LoginForm.tsx
+│   ├─ RegisterForm.tsx
+│   └─ ResetPasswordForm.tsx
+│
+├─ hooks/                # (tùy chọn) hook riêng cho Auth
+│   └─ useAuth.ts
+│
+├─ services/             # API gọi riêng cho Auth
+│   └─ authService.ts
+│
+├─ types/                # Khai báo interface/type cho Auth
+│   └─ auth.ts
+│
+├─ Login.tsx             # Trang đăng nhập
+├─ Register.tsx          # Trang đăng ký
+├─ ResetPassword.tsx     # Trang quên/mật khẩu mới
+└─ index.ts 

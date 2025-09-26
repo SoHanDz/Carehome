@@ -1,13 +1,11 @@
 import AppLayout from "./layouts/AppLayout"
-import Login from "./pages/Auth/Login"
+import customTheme from "./theme";
 
 
 function App() {
 
   return (
-    <AppLayout>
-      <Login />
-    </AppLayout>
+    <AppLayout theme={customTheme} children={undefined} />
   )
 }
 

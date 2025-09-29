@@ -308,11 +308,17 @@ function Residents() {
             }
           >
             <div style={{ fontWeight: 600 }}>{record.name}</div>
-            <div style={{ color: "#666", fontSize: 12 }}>{record.dob}</div>
+            
           </Tooltip>
         </div>
       ),
       sorter: (a: Resident, b: Resident) => a.name.localeCompare(b.name),
+    },
+    {
+      title: "Ngày sinh",
+      dataIndex: "dob",
+      key: "dob",
+      align: "center" as const,
     },
     {
       title: "Giới tính",

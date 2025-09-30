@@ -1,12 +1,11 @@
-import AppLayout from "./layouts/AppLayout"
-import customTheme from "./theme";
-
+import { BrowserRouter } from "react-router-dom";
+import AppRoutes from "./routes/route";
 
 function App() {
-
   return (
-    <AppLayout theme={customTheme} children={undefined} />
-  )
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  );
 }
-
-export default App
+export default App;

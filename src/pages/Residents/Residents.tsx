@@ -9,22 +9,17 @@ import {
   Modal,
   Form,
   DatePicker,
-  Card,
   Grid,
   message,
   Typography,
   Tooltip,
   Descriptions,
-  Row,
-  Col,
-  Empty,
 } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   ExclamationCircleOutlined,
-  UserOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
 import dayjs, { Dayjs } from "dayjs";
@@ -45,7 +40,6 @@ interface Resident {
   cccd: string;
   phone: string;
 }
-
 interface FormValues {
   name: string;
   dob: Dayjs;
@@ -60,7 +54,7 @@ const initialResidents: Resident[] = [
   {
     key: "1",
     code: "BN00001",
-    name: "Đào Quốc Sơn Hàscscscasc",
+    name: "Đào Quốc Sơn Hà linh",
     dob: "31/10/1960",
     gender: "Nam",
     room: "A02",
@@ -99,15 +93,28 @@ function Residents() {
   const [form] = Form.useForm<FormValues>();
   const screens = useBreakpoint();
 
+  // 🔹 Responsive config
   const isMobile = !!screens.xs;
-  const isTablet = !!screens.sm && !screens.md;
+  const ui = {
+    padding: isMobile ? 8 : 16,
+    titleFontSize: isMobile ? 18 : 20,
+    buttonSize: (isMobile ? "small" : "middle") as "small" | "middle",
+    inputSize: (isMobile ? "small" : "middle") as "small" | "middle",
+    formItemSize: (isMobile ? "large" : "middle") as "large" | "middle",
+    tablePageSize: isMobile ? 5 : 10,
+    modalWidth: isMobile ? "100%" : 600,
+  };
 
+  // 🔹 Generate mã BN
   const generateResidentCode = useCallback(() => {
-    const existingCodes = data.map((r) => parseInt(r.code.replace("BN", ""), 10));
+    const existingCodes = data.map((r) =>
+      parseInt(r.code.replace("BN", ""), 10)
+    );
     const nextNumber = Math.max(...existingCodes, 0) + 1;
     return `BN${String(nextNumber).padStart(5, "0")}`;
   }, [data]);
 
+  // 🔹 Lọc dữ liệu
   const filteredData = useMemo(() => {
     return data.filter((resident) => {
       const searchLower = searchText.toLowerCase().trim();
@@ -119,112 +126,94 @@ function Residents() {
         resident.code.toLowerCase().includes(searchLower);
 
       const matchesRoom = !selectedRoom || resident.room === selectedRoom;
-
       return matchesSearch && matchesRoom;
     });
   }, [data, searchText, selectedRoom]);
 
+  // 🔹 Check trùng CCCD/SĐT
   const checkDuplicateInfo = useCallback(
-    (cccd: string, phone: string, excludeKey?: string) => {
-      return data.some(
+    (cccd: string, phone: string, excludeKey?: string) =>
+      data.some(
         (resident) =>
-          resident.key !== excludeKey && (resident.cccd === cccd || resident.phone === phone)
-      );
-    },
+          resident.key !== excludeKey &&
+          (resident.cccd === cccd || resident.phone === phone)
+      ),
     [data]
   );
 
-  const openAddModal = useCallback(() => {
+  // Modal thêm/sửa
+  const openAddModal = () => {
     setEditingResident(null);
     form.resetFields();
     setIsModalOpen(true);
-  }, [form]);
+  };
+  const openEditModal = (resident: Resident) => {
+    setEditingResident(resident);
+    form.setFieldsValue({
+      name: resident.name,
+      dob: dayjs(resident.dob, "DD/MM/YYYY"),
+      gender: resident.gender,
+      room: resident.room,
+      admissionDate: dayjs(resident.admissionDate, "DD/MM/YYYY"),
+      cccd: resident.cccd,
+      phone: resident.phone,
+    });
+    setIsModalOpen(true);
+  };
 
-  const openEditModal = useCallback(
-    (resident: Resident) => {
-      setEditingResident(resident);
-      form.setFieldsValue({
-        name: resident.name,
-        dob: dayjs(resident.dob, "DD/MM/YYYY"),
-        gender: resident.gender,
-        room: resident.room,
-        admissionDate: dayjs(resident.admissionDate, "DD/MM/YYYY"),
-        cccd: resident.cccd,
-        phone: resident.phone,
-      });
-      setIsModalOpen(true);
-    },
-    [form]
-  );
-
-  const openViewModal = useCallback((resident: Resident) => {
+  // Modal xem
+  const openViewModal = (resident: Resident) => {
     setViewingResident(resident);
     setIsViewModalOpen(true);
-  }, []);
-
-  const closeViewModal = useCallback(() => {
+  };
+  const closeViewModal = () => {
     setIsViewModalOpen(false);
     setViewingResident(null);
-  }, []);
+  };
 
-  const confirmDelete = useCallback(
-    (resident: Resident) => {
-      confirm({
-        title: "Xác nhận xóa cư dân",
-        icon: <ExclamationCircleOutlined style={{ color: "#ff4d4f" }} />,
-        content: (
-          <div style={{ marginTop: 8 }}>
-            <div style={{ padding: 8, borderRadius: 6, background: "#fafafa" }}>
-              <Text strong>{resident.name}</Text>
-              <div>
-                <Text type="secondary">Mã: {resident.code}</Text> •{" "}
-                <Text type="secondary">Phòng: {resident.room}</Text>
-              </div>
-            </div>
-            <div style={{ marginTop: 8, color: "#ff4d4f" }}>
-              ⚠️ Hành động này không thể hoàn tác!
-            </div>
+  // Xóa
+  const confirmDelete = (resident: Resident) => {
+    confirm({
+      title: "Xác nhận xóa cư dân",
+      icon: <ExclamationCircleOutlined style={{ color: "#ff4d4f" }} />,
+      content: (
+        <div style={{ marginTop: 8 }}>
+          <Text strong>{resident.name}</Text>
+          <div>
+            <Text type="secondary">Mã: {resident.code}</Text> •{" "}
+            <Text type="secondary">Phòng: {resident.room}</Text>
           </div>
-        ),
-        okText: "Xác nhận xóa",
-        okType: "danger",
-        cancelText: "Hủy bỏ",
-        width: isMobile ? "90%" : 480,
-        onOk() {
-          setLoading(true);
-          setTimeout(() => {
-            setData((prev) => prev.filter((r) => r.key !== resident.key));
-            message.success(`Đã xóa cư dân "${resident.name}" thành công!`);
-            setLoading(false);
-          }, 500);
-        },
-      });
-    },
-    [isMobile]
-  );
+          <div style={{ marginTop: 8, color: "#ff4d4f" }}>
+            ⚠️ Hành động này không thể hoàn tác!
+          </div>
+        </div>
+      ),
+      okText: "Xác nhận xóa",
+      okType: "danger",
+      cancelText: "Hủy bỏ",
+      width: isMobile ? "90%" : 480,
+      onOk() {
+        setLoading(true);
+        setTimeout(() => {
+          setData((prev) => prev.filter((r) => r.key !== resident.key));
+          message.success(`Đã xóa cư dân "${resident.name}" thành công!`);
+          setLoading(false);
+        }, 500);
+      },
+    });
+  };
 
-  const handleSave = useCallback(async () => {
+  // Lưu
+  const handleSave = async () => {
     try {
       setLoading(true);
       const values = await form.validateFields();
-
-      const isDuplicate = checkDuplicateInfo(values.cccd, values.phone, editingResident?.key);
-
-      if (isDuplicate) {
-        const duplicateResident = data.find(
-          (r) =>
-            r.key !== editingResident?.key &&
-            (r.cccd === values.cccd || r.phone === values.phone)
-        );
-
-        message.error(
-          `${duplicateResident?.cccd === values.cccd ? "CCCD" : "Số điện thoại"} đã tồn tại!`
-        );
-        setLoading(false);
+      if (checkDuplicateInfo(values.cccd, values.phone, editingResident?.key)) {
+        message.error("CCCD hoặc SĐT đã tồn tại!");
         return;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const residentData = {
         name: values.name.trim(),
@@ -238,125 +227,70 @@ function Residents() {
 
       if (editingResident) {
         setData((prev) =>
-          prev.map((r) => (r.key === editingResident.key ? { ...r, ...residentData } : r))
+          prev.map((r) =>
+            r.key === editingResident.key ? { ...r, ...residentData } : r
+          )
         );
-        message.success("Cập nhật thông tin cư dân thành công!");
+        message.success("Cập nhật thành công!");
       } else {
         const newResident: Resident = {
-          key: `resident_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          key: `resident_${Date.now()}`,
           code: generateResidentCode(),
           ...residentData,
         };
         setData((prev) => [...prev, newResident]);
-        message.success("Thêm cư dân mới thành công!");
+        message.success("Thêm mới thành công!");
       }
 
       setIsModalOpen(false);
       form.resetFields();
       setEditingResident(null);
-    } catch (error: any) {
-      if (error?.errorFields) {
-        message.error("Vui lòng kiểm tra lại thông tin các trường bắt buộc!");
-      } else {
-        message.error("Có lỗi xảy ra, vui lòng thử lại sau!");
-        console.error("Save error:", error);
-      }
+    } catch (err) {
+      message.error("Vui lòng kiểm tra thông tin!");
     } finally {
       setLoading(false);
     }
-  }, [form, editingResident, checkDuplicateInfo, data, generateResidentCode]);
+  };
 
-  const handleSearch = useCallback((value: string) => {
-    setSearchText(value);
-  }, []);
-
-  const handleRoomFilter = useCallback((room: string | undefined) => {
-    setSelectedRoom(room);
-  }, []);
-
-  const handleModalCancel = useCallback(() => {
-    setIsModalOpen(false);
-    form.resetFields();
-    setEditingResident(null);
-  }, [form]);
-
+  // 🔹 Table columns (gộp, responsive ellipsis)
   const columns = [
     {
       title: "Mã cư dân",
       dataIndex: "code",
       key: "code",
       align: "center" as const,
-      sorter: (a: Resident, b: Resident) => a.code.localeCompare(b.code),
+      width: 100,
     },
     {
-      title: "Họ tên / Ngày sinh",
-      key: "name_dob",
+      title: "Họ tên",
+      dataIndex: "name",
+      key: "name",
       align: "center" as const,
-      render: (_: any, record: Resident) => (
-        <div>
-          <Tooltip
-            title={
-              <div>
-                <div >
-                  <strong>Họ tên:</strong> {record.name}
-
-                </div>
-                <div>
-                  <strong>Ngày sinh:</strong> {record.dob}
-                </div>
-              </div>
-            }
+      render: (name: string) => (
+        <Tooltip title={name}>
+          <div
+            style={{
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: isMobile ? 100 : 200,
+            }}
           >
-            <div style={{ fontWeight: 600 }}>{record.name}</div>
-            
-          </Tooltip>
-        </div>
+            {name}
+          </div>
+        </Tooltip>
       ),
-      sorter: (a: Resident, b: Resident) => a.name.localeCompare(b.name),
     },
-    {
-      title: "Ngày sinh",
-      dataIndex: "dob",
-      key: "dob",
-      align: "center" as const,
-    },
-    {
-      title: "Giới tính",
-      dataIndex: "gender",
-      key: "gender",
-      align: "center" as const,
-    },
-    {
-      title: "Phòng",
-      dataIndex: "room",
-      key: "room",
-      align: "center" as const,
-      sorter: (a: Resident, b: Resident) => a.room.localeCompare(b.room),
-    },
-    {
-      title: "Ngày vào viện",
-      dataIndex: "admissionDate",
-      key: "admissionDate",
-      align: "center" as const,
-      sorter: (a: Resident, b: Resident) =>
-        dayjs(a.admissionDate, "DD/MM/YYYY").unix() - dayjs(b.admissionDate, "DD/MM/YYYY").unix(),
-    },
-    {
-      title: "CCCD",
-      dataIndex: "cccd",
-      key: "cccd",
-      align: "center" as const,
-    },
-    {
-      title: "SĐT",
-      dataIndex: "phone",
-      key: "phone",
-      align: "center" as const,
-    },
+    { title: "Ngày sinh", dataIndex: "dob", key: "dob", align: "center" as const },
+    { title: "Giới tính", dataIndex: "gender", key: "gender", align: "center" as const },
+    { title: "Phòng", dataIndex: "room", key: "room", align: "center" as const },
+    { title: "Vào viện", dataIndex: "admissionDate", key: "admissionDate", align: "center" as const },
+    { title: "CCCD", dataIndex: "cccd", key: "cccd", align: "center" as const },
+    { title: "SĐT", dataIndex: "phone", key: "phone", align: "center" as const },
     {
       title: "Thao tác",
       key: "action",
-      fixed: "right" as const,
       align: "center" as const,
       render: (_: any, record: Resident) => (
         <Space size="small">
@@ -369,271 +303,157 @@ function Residents() {
   ];
 
   return (
-    <div style={{ padding: 16 }}>
-      <Row gutter={[8, 16]}>
-        {/* Tiêu đề bên trái */}
-        <Col xs={24}>
-          <Row justify="space-between">
-            <Col xs={24} sm={12} md={10}>
-              <Title level={3} style={{ margin: 0, fontSize: isMobile ? 18 : 20 }}>
-                Quản lý Cư dân
-              </Title>
-            </Col>
-            <Row>
-              {/* Nút thêm cư dân bên phải */}
-              <Col xs={24} sm="auto">
-                <Button
-                  block={isMobile}
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={openAddModal}>
-                  Thêm Cư dân
-                </Button>
-              </Col>
-            </Row>
-          </Row>
-        </Col>
-        {/* Hàng thứ hai: bộ lọc và tìm kiếm */}
-        <Col xs={24} >
-          <Row justify="space-between" align="middle" gutter={[8, 8]}>
-            <Col xs={24} sm={8} md={6}>
-              <Select
-                placeholder="Phòng"
-                allowClear
-                onChange={handleRoomFilter}
-                value={selectedRoom}
-                options={ROOMS.map((room) => ({ label: `Phòng ${room}`, value: room }))}
-                style={{ width: "50%" }}
-              />
-            </Col>
-            <Col xs={24} sm={16} md={8}>
-              <Search
-                placeholder="Tìm theo Họ tên, CCCD, SĐT"
-                onSearch={handleSearch}
-                onChange={(e) => setSearchText(e.target.value)}
-                allowClear
-                enterButton
-              />
-            </Col>
-          </Row>
-        </Col>
-      </Row>
-
-      <div style={{ marginTop: 16 }}>
-        {!isMobile ? (
-          <Table
-            rowKey="key"
-            columns={columns}
-            dataSource={filteredData}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} cư dân`,
-              pageSizeOptions: ["10", "20", "50"],
-            }}
-            size="middle"
-            locale={{ emptyText: "Không tìm thấy cư dân nào" }}
-            scroll={{ x: 900 }}
-            loading={loading}
-          />
-        ) : (
-          <div>
-            {filteredData.length > 0 ? (
-              <Space direction="vertical" style={{ width: "100%" }}>
-                {filteredData.map((resident) => (
-                  <Card
-                    key={resident.key}
-                    size="small"
-                    title={
-                      <div>
-                        <Text strong>{resident.name}</Text>
-                        <div style={{ fontSize: 12, color: "#666" }}>
-                          {resident.code} — Phòng {resident.room}
-                        </div>
-                      </div>
-                    }
-                    actions={[
-                      <EyeOutlined key="view" onClick={() => openViewModal(resident)} />,
-                      <EditOutlined key="edit" onClick={() => openEditModal(resident)} />,
-                      <DeleteOutlined key="delete" onClick={() => confirmDelete(resident)} />,
-                    ]}
-                  >
-                    <Row gutter={[12, 8]}>
-                      <Col span={12}>
-                        <Text strong>Ngày sinh:</Text>
-                        <div>{resident.dob}</div>
-                      </Col>
-                      <Col span={12}>
-                        <Text strong>Giới tính:</Text>
-                        <div>{resident.gender}</div>
-                      </Col>
-                      <Col span={12}>
-                        <Text strong>Ngày vào viện:</Text>
-                        <div>{resident.admissionDate}</div>
-                      </Col>
-                      <Col span={12}>
-                        <Text strong>CCCD:</Text>
-                        <div>{resident.cccd}</div>
-                      </Col>
-                      <Col span={24} style={{ marginTop: 8 }}>
-                        <Text strong>SĐT:</Text> {resident.phone}
-                      </Col>
-                    </Row>
-                  </Card>
-                ))}
-              </Space>
-            ) : (
-              <div style={{ padding: 24 }}>
-                <Empty description="Không tìm thấy cư dân nào" />
-              </div>
-            )}
-          </div>
-        )}
+    <div style={{ padding: ui.padding }}>
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
+        <Title level={3} style={{ fontSize: ui.titleFontSize }}>
+          Quản lý Cư dân
+        </Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={openAddModal}
+          size={ui.buttonSize}>
+          {isMobile ? "Thêm" : "Thêm Cư dân"}
+        </Button>
       </div>
 
-      {/* Modal Add/Edit */}
+      {/* Bộ lọc */}
+      <div 
+        style={{
+          display: "flex",
+          justifyContent :"space-between",
+          flexDirection: isMobile ? "column" : "row",
+          gap: 8,
+          marginBottom: 16,
+        }}>
+        <Select
+          placeholder="Chọn phòng"
+          allowClear
+          onChange={setSelectedRoom}
+          value={selectedRoom}
+          options={ROOMS.map((room) => ({ label: `Phòng ${room}`, value: room }))}
+          style={{ width: isMobile ? "100%" : 200 }}
+          size={ui.inputSize}
+        />
+        <Search
+          placeholder="Tìm theo Họ tên, CCCD, SĐT"
+          onSearch={setSearchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          allowClear
+          style={{ width: isMobile ? "100%" : "40%" }}
+          enterButton
+          size={ui.inputSize}
+        />
+      </div>
+
+      {/* Table */}
+      <Table
+        rowKey="key"
+        columns={columns}
+        dataSource={filteredData}
+        pagination={{
+          pageSize: ui.tablePageSize,
+          showSizeChanger: !isMobile,
+        }}
+        size={isMobile ? "small" : "middle"}
+        scroll={{ x: isMobile ? "max-content" : 900 }}
+        loading={loading}
+      />
+
+      {/* Modal thêm/sửa */}
       <Modal
-        title={
-          <span>
-            <UserOutlined style={{ marginRight: 8 }} />
-            {editingResident ? "Chỉnh sửa thông tin cư dân" : "Thêm cư dân mới"}
-          </span>
-        }
+        title={editingResident ? "Chỉnh sửa cư dân" : "Thêm cư dân mới"}
         open={isModalOpen}
-        onCancel={handleModalCancel}
+        onCancel={() => setIsModalOpen(false)}
         onOk={handleSave}
         okText={editingResident ? "Cập nhật" : "Thêm mới"}
         cancelText="Hủy bỏ"
-        width={isMobile ? "100%" : 600}
-        style={isMobile ? { top: 8 } : {}}
+        width={ui.modalWidth}
         confirmLoading={loading}
-        maskClosable={false}
-        destroyOnHidden
+        destroyOnClose
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 8 }}>
+        <Form form={form} layout="vertical">
           <Form.Item
             label="Họ tên"
             name="name"
-            rules={[
-              { required: true, message: "Vui lòng nhập họ tên" },
-              { min: 2, message: "Họ tên phải có ít nhất 2 ký tự" },
-              { max: 50, message: "Họ tên không được vượt quá 50 ký tự" },
-              {
-                pattern: /^[a-zA-ZÀ-ỹ\s]+$/,
-                message: "Họ tên chỉ được chứa chữ cái và khoảng trắng",
-              },
-            ]}
+            rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}
           >
-            <Input placeholder="Nhập họ tên đầy đủ" maxLength={50} showCount />
+            <Input size={ui.formItemSize} />
           </Form.Item>
-
-          <Row gutter={12}>
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Ngày sinh"
-                name="dob"
-                rules={[{ required: true, message: "Vui lòng chọn ngày sinh" }]}
-              >
-                <DatePicker
-                  format="DD/MM/YYYY"
-                  style={{ width: "100%" }}
-                  placeholder="Chọn ngày sinh"
-                  disabledDate={(current) =>
-                    current &&
-                    (current.isAfter(dayjs()) || current.isBefore(dayjs().subtract(120, "years")))
-                  }
-                />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} sm={12}>
-              <Form.Item label="Giới tính" name="gender" rules={[{ required: true }]}>
-                <Select placeholder="Chọn giới tính" options={GENDERS} />
-              </Form.Item>
-            </Col>
-          </Row>
-
+          <Form.Item label="Ngày sinh" name="dob" rules={[{ required: true }]}>
+            <DatePicker
+              format="DD/MM/YYYY"
+              style={{ width: "100%" }}
+              size={ui.formItemSize}
+            />
+          </Form.Item>
+          <Form.Item label="Giới tính" name="gender" rules={[{ required: true }]}>
+            <Select options={GENDERS} size={ui.formItemSize} />
+          </Form.Item>
           <Form.Item label="Phòng" name="room" rules={[{ required: true }]}>
-            <Select placeholder="Chọn phòng" showSearch options={ROOMS.map((r) => ({ label: `Phòng ${r}`, value: r }))} />
+            <Select
+              options={ROOMS.map((r) => ({ label: `Phòng ${r}`, value: r }))}
+              size={ui.formItemSize}
+            />
           </Form.Item>
-
           <Form.Item
             label="Ngày vào viện"
             name="admissionDate"
-            rules={[{ required: true, message: "Vui lòng chọn ngày vào viện" }]}
+            rules={[{ required: true }]}
           >
             <DatePicker
               format="DD/MM/YYYY"
               style={{ width: "100%" }}
-              placeholder="Chọn ngày vào viện"
-              disabledDate={(current) => current && current.isAfter(dayjs())}
+              size={ui.formItemSize}
             />
           </Form.Item>
-
-          <Row gutter={12}>
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Số CCCD"
-                name="cccd"
-                rules={[
-                  { required: true, message: "Vui lòng nhập số CCCD" },
-                  { pattern: /^\d{12}$/, message: "CCCD phải có đúng 12 số" },
-                ]}
-              >
-                <Input placeholder="Nhập 12 số CCCD" maxLength={12} showCount />
-              </Form.Item>
-            </Col>
-
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Số điện thoại"
-                name="phone"
-                rules={[
-                  { required: true, message: "Vui lòng nhập số điện thoại" },
-                  { pattern: /^[0-9]{10,11}$/, message: "Số điện thoại phải có 10-11 chữ số" },
-                ]}
-              >
-                <Input placeholder="Nhập số điện thoại" maxLength={11} showCount />
-              </Form.Item>
-            </Col>
-          </Row>
+          <Form.Item
+            label="CCCD"
+            name="cccd"
+            rules={[{ required: true, message: "Nhập số CCCD" }]}
+          >
+            <Input size={ui.formItemSize} />
+          </Form.Item>
+          <Form.Item
+            label="SĐT"
+            name="phone"
+            rules={[{ required: true, message: "Nhập số điện thoại" }]}
+          >
+            <Input size={ui.formItemSize} />
+          </Form.Item>
         </Form>
       </Modal>
 
       {/* View Modal */}
       <Modal
-        title={
-          <span>
-            <UserOutlined style={{ marginRight: 8 }} />
-            Thông tin cư dân
-          </span>
-        }
+        title="Thông tin cư dân"
         open={isViewModalOpen}
         onCancel={closeViewModal}
-        footer={[
-          <Button key="close" onClick={closeViewModal}>
-            Đóng
-          </Button>,
-        ]}
-        width={isMobile ? "100%" : 600}
-        style={isMobile ? { top: 8 } : {}}
-        destroyOnClose
-      >
+        footer={<Button onClick={closeViewModal}>Đóng</Button>}
+        width={ui.modalWidth}
+        destroyOnClose>
         {viewingResident && (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="Mã cư dân">{viewingResident.code}</Descriptions.Item>
+            <Descriptions.Item label="Mã">{viewingResident.code}</Descriptions.Item>
             <Descriptions.Item label="Họ tên">{viewingResident.name}</Descriptions.Item>
             <Descriptions.Item label="Ngày sinh">{viewingResident.dob}</Descriptions.Item>
             <Descriptions.Item label="Giới tính">{viewingResident.gender}</Descriptions.Item>
             <Descriptions.Item label="Phòng">{viewingResident.room}</Descriptions.Item>
-            <Descriptions.Item label="Ngày vào viện">{viewingResident.admissionDate}</Descriptions.Item>
-            <Descriptions.Item label="Số CCCD">{viewingResident.cccd}</Descriptions.Item>
-            <Descriptions.Item label="Số điện thoại">{viewingResident.phone}</Descriptions.Item>
+            <Descriptions.Item label="Vào viện">{viewingResident.admissionDate}</Descriptions.Item>
+            <Descriptions.Item label="CCCD">{viewingResident.cccd}</Descriptions.Item>
+            <Descriptions.Item label="SĐT">{viewingResident.phone}</Descriptions.Item>
           </Descriptions>
         )}
       </Modal>
     </div>
   );
 }
+
 export default Residents;

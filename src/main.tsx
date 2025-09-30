@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import "antd/dist/reset.css"; // Ant Design v5
 import App from './App.tsx'
 import './global.css'
 

@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
         },
         
         {
-          key: 'users',
+          key: '/users',
           icon: <UserOutlined />,
           label: 'Quản lý Người dùng',
         },
